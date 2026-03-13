@@ -1,6 +1,5 @@
 flask
 numpy
-tensorflow
 joblib
+tensorflow-cpu==2.13.0
 firebase-admin
-gunicorn
