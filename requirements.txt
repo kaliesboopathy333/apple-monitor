@@ -1,0 +1,6 @@
+flask
+numpy
+tensorflow
+joblib
+firebase-admin
+gunicorn
