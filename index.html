@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple Freshness Monitor</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+:root {
+<<<<<<< HEAD
+  --fresh:#2d9e6b;
+  --fresh-bg:#edfaf3;
+  --ripe:#d97706;
+  --ripe-bg:#fef9ee;
+  --spoiled:#dc2626;
+  --spoiled-bg:#fff1f1;
+  --card-bg:#fffdf9;
+  --border:#f0e8df;
+  --text:#1c1410;
+  --muted:#9b8b7a;
+  --accent:#c84b2f;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+
+body {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Epilogue',sans-serif;
+  background:#fdf6ee;
+  padding:2rem;
+}
+
+.card {
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:28px;
+  width:100%;
+  max-width:420px;
+  padding:2rem;
+  box-shadow:0 24px 60px #c84b2f14;
+}
+
+.title { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; margin-bottom:4px }
+.subtitle { font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted) }
+
+.status-hero {
+  border-radius:18px; padding:1.2rem; margin:1.5rem 0;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.status-hero.fresh    { background:var(--fresh-bg);   color:var(--fresh) }
+.status-hero.ripening { background:var(--ripe-bg);    color:var(--ripe) }
+.status-hero.spoiled  { background:var(--spoiled-bg); color:var(--spoiled) }
+
+.status-value { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700 }
+
+.sensor-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1.5rem }
+
+.sensor-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:.9rem }
+.sensor-name { font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted) }
+.sensor-val  { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700 }
+
+.risk-section { margin-bottom:1.5rem }
+.bar-track { height:8px; background:#f0e8df; border-radius:99px; overflow:hidden }
+.bar-fill  { height:100%; width:0%; background:var(--fresh); transition:width .6s }
+
+.card-footer {
+  display:flex; justify-content:space-between; font-size:.7rem;
+  color:var(--muted); border-top:1px solid var(--border); padding-top:1rem;
+}
+
+/* Confidence Ring */
+.conf-ring { position:relative; width:72px; height:72px; flex-shrink:0 }
+.conf-ring svg { transform:rotate(-90deg); display:block }
+.conf-ring circle { fill:none; stroke-width:5; stroke-linecap:round }
+.track { stroke:#00000015 }
+.fill  { stroke:var(--fresh); transition:stroke-dashoffset .6s }
+.conf-pct {
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:600; font-size:.72rem;
+}
+
+/* ── GRAPHS ── */
+.graphs-section { margin-bottom:1.5rem }
+
+.graphs-title {
+  font-size:.65rem; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:.9rem;
+}
+
+.graph-block {
+  background:#fff; border:1px solid var(--border);
+  border-radius:14px; padding:12px 14px 10px; margin-bottom:10px;
+}
+
+.graph-block-header {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;
+}
+
+.graph-block-label {
+  font-size:.63rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); font-weight:600;
+}
+
+.graph-live-val { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:700 }
+
+.sparkline-wrap { height:54px; position:relative }
+.sparkline-wrap svg { width:100%; height:100%; overflow:visible }
+
+.spark-area { opacity:.13 }
+.spark-line {
+  fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:600; stroke-dashoffset:600;
+  transition: stroke-dashoffset 1.3s ease;
+}
+
+.no-data {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:.68rem; color:var(--muted); font-style:italic;
+=======
+--fresh:#2d9e6b;
+--fresh-bg:#edfaf3;
+--ripe:#d97706;
+--ripe-bg:#fef9ee;
+--spoiled:#dc2626;
+--spoiled-bg:#fff1f1;
+--card-bg:#fffdf9;
+--border:#f0e8df;
+--text:#1c1410;
+--muted:#9b8b7a;
+--accent:#c84b2f;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+font-family:'Epilogue',sans-serif;
+background:#fdf6ee;
+padding:2rem
+}
+
+.card{
+background:var(--card-bg);
+border:1px solid var(--border);
+border-radius:28px;
+width:100%;
+max-width:420px;
+padding:2rem;
+box-shadow:0 24px 60px #c84b2f14
+}
+
+.title{
+font-family:'Playfair Display',serif;
+font-size:1.6rem;
+font-weight:900;
+margin-bottom:4px
+}
+
+.subtitle{
+font-size:.7rem;
+letter-spacing:.2em;
+text-transform:uppercase;
+color:var(--muted)
+}
+
+.status-hero{
+border-radius:18px;
+padding:1.2rem;
+margin:1.5rem 0;
+display:flex;
+justify-content:space-between;
+align-items:center
+}
+
+.status-hero.fresh{background:var(--fresh-bg);color:var(--fresh)}
+.status-hero.ripening{background:var(--ripe-bg);color:var(--ripe)}
+.status-hero.spoiled{background:var(--spoiled-bg);color:var(--spoiled)}
+
+.status-value{
+font-family:'Playfair Display',serif;
+font-size:1.8rem;
+font-weight:700
+}
+
+.sensor-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-bottom:1.5rem
+}
+
+.sensor-card{
+background:#fff;
+border:1px solid var(--border);
+border-radius:12px;
+padding:.9rem
+}
+
+.sensor-name{
+font-size:.65rem;
+letter-spacing:.15em;
+text-transform:uppercase;
+color:var(--muted)
+}
+
+.sensor-val{
+font-family:'Playfair Display',serif;
+font-size:1.3rem;
+font-weight:700
+}
+
+.risk-section{
+margin-bottom:1.5rem
+}
+
+.bar-track{
+height:8px;
+background:#f0e8df;
+border-radius:99px;
+overflow:hidden
+}
+
+.bar-fill{
+height:100%;
+width:0%;
+background:var(--fresh);
+transition:width .6s
+}
+
+.card-footer{
+display:flex;
+justify-content:space-between;
+font-size:.7rem;
+color:var(--muted);
+border-top:1px solid var(--border);
+padding-top:1rem
+}
+
+/* ── Confidence Ring ── */
+.conf-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.conf-ring svg {
+  transform: rotate(-90deg);
+  display: block;
+}
+
+.conf-ring circle {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.track { stroke: #00000015; }
+
+.fill {
+  stroke: var(--fresh);
+  transition: stroke-dashoffset .6s;
+}
+
+.conf-pct {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: .72rem;
+>>>>>>> 56819865be70e812411e1008daf22ce1016d29cf
+}
+</style>
+</head>
+
+<body>
+<<<<<<< HEAD
+<div class="card">
+
+  <div class="title">🍎 Apple Freshness</div>
+  <div class="subtitle">Fruit Monitor</div>
+
+  <div class="status-hero fresh" id="status-hero">
+    <div><div class="status-value" id="label">Waiting...</div></div>
+    <div class="conf-ring">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle class="track" cx="36" cy="36" r="29"/>
+        <circle class="fill" id="ring-fill" cx="36" cy="36" r="29"/>
+      </svg>
+      <div class="conf-pct"><span id="conf-num">0</span>%</div>
+    </div>
+  </div>
+
+  <div class="sensor-grid">
+    <div class="sensor-card">
+      <div class="sensor-name">Temperature</div>
+      <div class="sensor-val"><span id="temp">—</span> °C</div>
+    </div>
+    <div class="sensor-card">
+      <div class="sensor-name">Humidity</div>
+      <div class="sensor-val"><span id="hum">—</span> %</div>
+    </div>
+    <div class="sensor-card" style="grid-column:span 2">
+      <div class="sensor-name">MQ135 Gas</div>
+      <div class="sensor-val"><span id="mq">—</span></div>
+    </div>
+  </div>
+
+  <div class="risk-section">
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+      <div style="font-size:.7rem;color:var(--muted)">Spoilage Risk</div>
+      <div id="risk-pct">0%</div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+  </div>
+
+  <!-- ── GRAPHS ── -->
+  <div class="graphs-section">
+    <div class="graphs-title">Sensor Trends</div>
+
+    <!-- Gas -->
+    <div class="graph-block">
+      <div class="graph-block-header">
+        <span class="graph-block-label">MQ135 Gas (ppm)</span>
+        <span class="graph-live-val" id="g-gas-val" style="color:#c84b2f">—</span>
+      </div>
+      <div class="sparkline-wrap">
+        <svg viewBox="0 0 300 54" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gr-gas" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c84b2f"/><stop offset="100%" stop-color="#c84b2f" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="gas-area" class="spark-area" fill="url(#gr-gas)"/>
+          <path id="gas-line" class="spark-line" stroke="#c84b2f"/>
+          <circle id="gas-dot" r="0" fill="#c84b2f">
+            <animate attributeName="r" values="2.5;4.5;2.5" dur="1.4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <div class="no-data" id="gas-empty">Waiting for data…</div>
+      </div>
+    </div>
+
+    <!-- Temp -->
+    <div class="graph-block">
+      <div class="graph-block-header">
+        <span class="graph-block-label">Temperature (°C)</span>
+        <span class="graph-live-val" id="g-temp-val" style="color:#d97706">—</span>
+      </div>
+      <div class="sparkline-wrap">
+        <svg viewBox="0 0 300 54" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gr-temp" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d97706"/><stop offset="100%" stop-color="#d97706" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="temp-area" class="spark-area" fill="url(#gr-temp)"/>
+          <path id="temp-line" class="spark-line" stroke="#d97706"/>
+          <circle id="temp-dot" r="0" fill="#d97706">
+            <animate attributeName="r" values="2.5;4.5;2.5" dur="1.4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <div class="no-data" id="temp-empty">Waiting for data…</div>
+      </div>
+    </div>
+
+    <!-- Humidity -->
+    <div class="graph-block">
+      <div class="graph-block-header">
+        <span class="graph-block-label">Humidity (%)</span>
+        <span class="graph-live-val" id="g-hum-val" style="color:#2d9e6b">—</span>
+      </div>
+      <div class="sparkline-wrap">
+        <svg viewBox="0 0 300 54" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gr-hum" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2d9e6b"/><stop offset="100%" stop-color="#2d9e6b" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="hum-area" class="spark-area" fill="url(#gr-hum)"/>
+          <path id="hum-line" class="spark-line" stroke="#2d9e6b"/>
+          <circle id="hum-dot" r="0" fill="#2d9e6b">
+            <animate attributeName="r" values="2.5;4.5;2.5" dur="1.4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <div class="no-data" id="hum-empty">Waiting for data…</div>
+      </div>
+    </div>
+
+    <!-- Risk -->
+    <div class="graph-block">
+      <div class="graph-block-header">
+        <span class="graph-block-label">Spoilage Risk (%)</span>
+        <span class="graph-live-val" id="g-risk-val" style="color:#dc2626">—</span>
+      </div>
+      <div class="sparkline-wrap">
+        <svg viewBox="0 0 300 54" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gr-risk" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#dc2626"/><stop offset="100%" stop-color="#dc2626" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="risk-area" class="spark-area" fill="url(#gr-risk)"/>
+          <path id="risk-line" class="spark-line" stroke="#dc2626"/>
+          <circle id="risk-dot" r="0" fill="#dc2626">
+            <animate attributeName="r" values="2.5;4.5;2.5" dur="1.4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <div class="no-data" id="risk-empty">Waiting for data…</div>
+      </div>
+      
+    </div>
+
+  </div>
+  <!-- ── END GRAPHS ── -->
+
+  <div class="card-footer">
+    <div>Updated <span id="time">—</span></div>
+    <div>ML Powered</div>
+  </div>
+
+</div>
+
+<script>
+const CIRC = 2 * Math.PI * 29;
+const ringFill = document.getElementById("ring-fill");
+ringFill.style.strokeDasharray  = CIRC;
+ringFill.style.strokeDashoffset = CIRC;
+
+=======
+
+<div class="card">
+
+<div class="title">🍎 Apple Freshness</div>
+<div class="subtitle">Fruit Monitor</div>
+
+<div class="status-hero fresh" id="status-hero">
+  <div>
+    <div class="status-value" id="label">Waiting...</div>
+  </div>
+
+  <div class="conf-ring">
+    <svg width="72" height="72" viewBox="0 0 72 72">
+      <circle class="track" cx="36" cy="36" r="29"/>
+      <circle class="fill" id="ring-fill" cx="36" cy="36" r="29"/>
+    </svg>
+    <div class="conf-pct"><span id="conf-num">0</span>%</div>
+  </div>
+</div>
+
+<div class="sensor-grid">
+  <div class="sensor-card">
+    <div class="sensor-name">Temperature</div>
+    <div class="sensor-val"><span id="temp">—</span> °C</div>
+  </div>
+
+  <div class="sensor-card">
+    <div class="sensor-name">Humidity</div>
+    <div class="sensor-val"><span id="hum">—</span> %</div>
+  </div>
+
+  <div class="sensor-card" style="grid-column:span 2">
+    <div class="sensor-name">MQ135 Gas</div>
+    <div class="sensor-val"><span id="mq">—</span></div>
+  </div>
+</div>
+
+<div class="risk-section">
+  <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+    <div style="font-size:.7rem;color:var(--muted)">Spoilage Risk</div>
+    <div id="risk-pct">0%</div>
+  </div>
+
+  <div class="bar-track">
+    <div class="bar-fill" id="bar-fill"></div>
+  </div>
+</div>
+
+<div class="card-footer">
+  <div>Updated <span id="time">—</span></div>
+  <div>ML Powered</div>
+</div>
+
+</div>
+
+<script>
+// r=29 → circumference = 2π×29
+const CIRC = 2 * Math.PI * 29;
+
+const ringFill = document.getElementById("ring-fill");
+ringFill.style.strokeDasharray  = CIRC;
+ringFill.style.strokeDashoffset = CIRC; // start empty
+
+// Firebase config
+>>>>>>> 56819865be70e812411e1008daf22ce1016d29cf
+const firebaseConfig = {
+  apiKey:"AIzaSyCz53tTQrZUAlxMj0F7SXz4vHH_sObwllY",
+  authDomain:"applemonitor-d8626.firebaseapp.com",
+  databaseURL:"https://applemonitor-d8626-default-rtdb.firebaseio.com",
+  projectId:"applemonitor-d8626",
+  storageBucket:"applemonitor-d8626.firebasestorage.app",
+  messagingSenderId:"483774283255",
+  appId:"1:483774283255:web:a9fc580b01c6a0b69282f2"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+<<<<<<< HEAD
+const MAX = 20;
+const hist = { gas:[], temp:[], hum:[], risk:[] };
+
+// Load last N records for initial sparklines
+db.ref("sensor_data").limitToLast(MAX).once("value", snap => {
+  snap.forEach(child => {
+    const d = child.val();
+    if(d.mq135      != null) hist.gas.push(+d.mq135);
+    if(d.temp       != null) hist.temp.push(+d.temp);
+    if(d.hum        != null) hist.hum.push(+d.hum);
+    if(d.spoil_risk != null) hist.risk.push(+d.spoil_risk);  // ✅ FIXED
+  });
+  drawAll();
+});
+
+// Live updates
+db.ref("sensor_data").limitToLast(1).on("child_added", snap => {
+  const d = snap.val();
+
+  document.getElementById("label").innerText    = d.label      || '—';
+  document.getElementById("conf-num").innerText = d.confidence || 0;
+  document.getElementById("temp").innerText     = d.temp       || '—';
+  document.getElementById("hum").innerText      = d.hum        || '—';
+  document.getElementById("mq").innerText       = d.mq135      || '—';
+  document.getElementById("time").innerText     = d.timestamp  || '—';
+
+  setConf(d.confidence || 0);
+  setStatus(d.label || 'fresh', d.spoil_risk || 0);  // ✅ FIXED
+
+  if(d.mq135      != null) push(hist.gas,  +d.mq135);
+  if(d.temp       != null) push(hist.temp, +d.temp);
+  if(d.hum        != null) push(hist.hum,  +d.hum);
+  if(d.spoil_risk != null) push(hist.risk, +d.spoil_risk);  // ✅ FIXED
+
+  drawAll();
+});
+
+function push(arr, v) { arr.push(v); if(arr.length > MAX) arr.shift(); }
+
+function setStatus(label, pct) {
+  const hero = document.getElementById("status-hero");
+  const bar  = document.getElementById("bar-fill");
+  const rpct = document.getElementById("risk-pct");
+  hero.className = "status-hero";
+  let cls = "fresh";
+  if(label.toLowerCase()==="ripening") cls = "ripening";
+  if(label.toLowerCase()==="spoiled")  cls = "spoiled";
+  hero.classList.add(cls);
+  const c = { fresh:"#2d9e6b", ripening:"#d97706", spoiled:"#dc2626" };
+  ringFill.style.stroke = c[cls];
+  bar.style.background  = c[cls];
+  bar.style.width       = Math.max(0,Math.min(100,pct||0)) + "%";
+  rpct.innerText        = Math.round(pct||0) + "%";
+  rpct.style.color      = c[cls];
+}
+
+function setConf(v) {
+  ringFill.style.strokeDashoffset = CIRC - (CIRC * (Math.max(0,Math.min(100,v))/100));
+}
+
+function drawAll() {
+  draw('gas',  hist.gas,  'gas-line',  'gas-area',  'gas-dot',  'g-gas-val',  'gas-empty',  '');
+  draw('temp', hist.temp, 'temp-line', 'temp-area', 'temp-dot', 'g-temp-val', 'temp-empty', ' °C');
+  draw('hum',  hist.hum,  'hum-line',  'hum-area',  'hum-dot',  'g-hum-val',  'hum-empty',  '%');
+  draw('risk', hist.risk, 'risk-line', 'risk-area', 'risk-dot', 'g-risk-val', 'risk-empty', '%');
+}
+
+function draw(key, pts, lineId, areaId, dotId, valId, emptyId, unit) {
+  const emptyEl = document.getElementById(emptyId);
+  const valEl   = document.getElementById(valId);
+
+  if(!pts || pts.length < 2) {
+    emptyEl.style.display = 'flex';
+    valEl.innerText = '—';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const W = 300, H = 46;
+  const minV = Math.min(...pts), maxV = Math.max(...pts);
+  const range = maxV - minV || 1;
+
+  const coords = pts.map((v, i) => [
+    (i / (pts.length - 1)) * W,
+    H - ((v - minV) / range) * H * 0.82 - H * 0.06
+  ]);
+
+  let d = `M${coords[0][0]},${coords[0][1]}`;
+  for(let i = 1; i < coords.length; i++) {
+    const [x0,y0] = coords[i-1], [x1,y1] = coords[i];
+    const cx = (x0+x1)/2;
+    d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`;
+  }
+
+  const lineEl = document.getElementById(lineId);
+  lineEl.setAttribute('d', d);
+  lineEl.style.strokeDashoffset = '600';
+  requestAnimationFrame(() => { lineEl.style.strokeDashoffset = '0'; });
+
+  document.getElementById(areaId).setAttribute('d',
+    d + ` L${coords[coords.length-1][0]},${H+4} L0,${H+4} Z`
+  );
+
+  const [lx, ly] = coords[coords.length-1];
+  document.getElementById(dotId).setAttribute('cx', lx);
+  document.getElementById(dotId).setAttribute('cy', ly);
+
+  valEl.innerText = pts[pts.length-1] + unit;
+=======
+const sensorRef = db.ref("sensor_data").limitToLast(1);
+
+sensorRef.on("child_added", function(snapshot){
+  const data = snapshot.val();
+  document.getElementById("label").innerText    = data.label || '—';
+  document.getElementById("conf-num").innerText = data.confidence || 0;
+  document.getElementById("temp").innerText     = data.temp || '—';
+  document.getElementById("hum").innerText      = data.hum || '—';
+  document.getElementById("mq").innerText       = data.mq135 || '—';
+  document.getElementById("time").innerText     = data.timestamp || '—';
+  
+  setConf(data.confidence || 0);
+  // ✅ FIXED: spoilage_percent → risk_percent to match Python backend
+  setStatus(data.label || 'fresh', data.risk_percent || 0);
+});
+
+function setStatus(label, pct){
+  const hero    = document.getElementById("status-hero");
+  const fill    = document.getElementById("ring-fill");
+  const bar     = document.getElementById("bar-fill");
+  const riskPct = document.getElementById("risk-pct");
+
+  hero.className = "status-hero";
+
+  let statusClass = "fresh";
+  if(label.toLowerCase() == "ripening") statusClass = "ripening";
+  if(label.toLowerCase() == "spoiled")  statusClass = "spoiled";
+
+  hero.classList.add(statusClass);
+
+  const colours = {
+    fresh:    "#2d9e6b",
+    ripening: "#d97706",
+    spoiled:  "#dc2626"
+  };
+
+  fill.style.stroke      = colours[statusClass];
+  bar.style.background   = colours[statusClass];
+  bar.style.width        = Math.max(0, Math.min(100, pct || 0)) + "%";
+  riskPct.innerText      = Math.round(pct || 0) + "%";
+  riskPct.style.color    = colours[statusClass];
+}
+
+function setConf(val){
+  const fill = document.getElementById("ring-fill");
+  const progress = Math.max(0, Math.min(100, val || 0));
+  fill.style.strokeDashoffset = CIRC - (CIRC * (progress / 100));
+>>>>>>> 56819865be70e812411e1008daf22ce1016d29cf
+}
+</script>
+
+</body>
+<<<<<<< HEAD
+</html>
+=======
+</html>
+>>>>>>> 56819865be70e812411e1008daf22ce1016d29cf

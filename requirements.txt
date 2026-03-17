@@ -1,0 +1,9 @@
+flask
+numpy
+joblib
+tensorflow-cpu==2.13.0
+<<<<<<< HEAD
+firebase-admin
+=======
+firebase-admin
+>>>>>>> 56819865be70e812411e1008daf22ce1016d29cf
