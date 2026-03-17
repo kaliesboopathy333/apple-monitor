@@ -26,7 +26,7 @@ print("🔥 Firebase Connected!")
 
 # 🔥 LOAD ML MODEL
 print("🔄 Loading LSTM model...")
-model = keras.models.load_model('apple_lstm_model.keras')
+model = keras.models.load_model('apple_lstm_model.h5')
 scaler = joblib.load('scaler.pkl')
 le = joblib.load('label_encoder.pkl')
 print("✅ Model Loaded!")
