@@ -1,5 +1,5 @@
 import os
-
+import json
 from flask import Flask, request, jsonify, send_from_directory
 import numpy as np
 import joblib
@@ -13,7 +13,8 @@ from email.mime.text import MIMEText
 app = Flask(__name__, static_folder='.')
 
 # 🔥 FIREBASE CONNECTION
-cred = credentials.Certificate("/etc/secrets/servicesAccountKey.json")
+firebase_key_json = json.loads(os.environ.get("FIREBASE_KEY"))
+cred = credentials.Certificate(firebase_key_json)
 
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://applemonitor-d8626-default-rtdb.firebaseio.com/'
