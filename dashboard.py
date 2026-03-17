@@ -13,7 +13,7 @@ from email.mime.text import MIMEText
 app = Flask(__name__, static_folder='.')
 
 # 🔥 FIREBASE CONNECTION
-cred = credentials.Certificate("servicesAccountKey.json")
+cred = credentials.Certificate("/etc/secrets/servicesAccountKey.json")
 
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://applemonitor-d8626-default-rtdb.firebaseio.com/'
@@ -200,6 +200,5 @@ def data():
 
 # 🔥 START SERVER
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get("PORT", 10000))
     app.run_server(host='0.0.0.0', port=port, debug=False)
