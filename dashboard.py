@@ -102,7 +102,7 @@ def send_email_alert(temp, hum, mq135, label):
 
     sender_email   = "kaliesboopathy@gmail.com"
     receiver_email = "anbu200516@gmail.com"
-    app_password   = "dkapfvmfpwtgawku"
+    app_password   = "bqfkqmskhhndegbj"
 
     if label.lower() == "ripening":
         subject = "🍎 Apple Ripening Started!"
