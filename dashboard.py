@@ -1,10 +1,8 @@
-import os
-import json
 from flask import Flask, request, jsonify, send_from_directory
 import numpy as np
 import joblib
 from tensorflow import keras
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, db
 import smtplib
@@ -12,205 +10,184 @@ from email.mime.text import MIMEText
 
 app = Flask(__name__, static_folder='.')
 
-# ─────────────────────────────────────
-# TIMEZONE — IST
-# ─────────────────────────────────────
-IST = timezone(timedelta(hours=5, minutes=30))
-
-# ─────────────────────────────────────
-# FIREBASE CONNECTION
-# ─────────────────────────────────────
-firebase_key_json = json.loads(os.environ.get("FIREBASE_KEY"))
-cred = credentials.Certificate(firebase_key_json)
+# 🔥 FIREBASE CONNECTION
+cred = credentials.Certificate("servicesAccountKey.json")
 
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://applemonitor-d8626-default-rtdb.firebaseio.com/'
 })
 
 firebase_ref = db.reference("sensor_data")
+
 print("🔥 Firebase Connected!")
 
-# ─────────────────────────────────────
-# LOAD ML MODEL
-# ─────────────────────────────────────
+# 🔥 LOAD ML MODEL
 print("🔄 Loading LSTM model...")
-model  = keras.models.load_model('apple_lstm_model.h5')
+model = keras.models.load_model('apple_lstm_model.keras')
 scaler = joblib.load('scaler.pkl')
-le     = joblib.load('label_encoder.pkl')
+le = joblib.load('label_encoder.pkl')
 print("✅ Model Loaded!")
 
 latest_data = {
-    "label"      : "Waiting...",
-    "confidence" : 0,
-    "spoil_risk" : 0,
-    "mq135"      : 0,
-    "temp"       : 0,
-    "hum"        : 0,
-    "timestamp"  : ""
+    "label": "Waiting...",
+    "confidence": 0,
+    "spoil_risk": 0,
+    "mq135": 0,
+    "temp": 0,
+    "hum": 0,
+    "timestamp": ""
 }
 
-email_sent = False
+# ✅ NEW: Email cooldown control
+last_email_time = None
+EMAIL_INTERVAL = 300  # 5 minutes
 
 
-# ─────────────────────────────────────
-# ML PREDICTION (UPDATED)
-# ─────────────────────────────────────
+# 🔥 ML PREDICTION FUNCTION
 def predict_spoilage(mq135, temp, hum):
 
-    # Scale input
-    scaled     = scaler.transform([[mq135, temp, hum]])
-    input_data = scaled.reshape(1, 1, 3)
+    scaled = scaler.transform([[mq135, temp, hum]])
+    input_data = scaled.reshape(1,1,3)
 
-    # Predict
     pred = model.predict(input_data, verbose=0)[0]
 
-    idx   = np.argmax(pred)
+    idx = np.argmax(pred)
     label = le.inverse_transform([idx])[0]
-
-    # Probabilities
-    fresh_prob    = float(pred[0] * 100)
-    ripening_prob = float(pred[1] * 100)
-    spoiled_prob  = float(pred[2] * 100)
 
     confidence = float(np.max(pred) * 100)
 
-    # 🔥 ML-BASED RISK (NO MANUAL RULES)
-    risk_percent = spoiled_prob + (ripening_prob * 0.5)
+    fresh_prob = pred[0] * 100
+    ripening_prob = pred[1] * 100
+    spoiled_prob = pred[2] * 100
 
-    # Clamp to 0–100
-    risk_percent = min(100, max(0, risk_percent))
+    # ML risk calculation
+    risk_percent = (ripening_prob * 0.6 + spoiled_prob * 1.0)
 
-    print(f"ML Probs  : Fresh={fresh_prob:.1f}%  Ripening={ripening_prob:.1f}%  Spoiled={spoiled_prob:.1f}%")
-    print(f"ML Risk   : {risk_percent:.1f}%")
+    # Sensor based risk
+    sensor_risk = 0
 
-    return label, confidence, round(risk_percent, 1)
+    # Temperature risk
+    temp_risk = min(max((temp - 20) / 15 * 25, 0), 25)
+    sensor_risk += temp_risk
+
+    # Humidity risk
+    if hum > 85:
+        sensor_risk += min((hum - 85) * 1, 5)
+
+    # Gas risk
+    if mq135 > 400:
+        sensor_risk += min((mq135 - 400) * 0.02, 10)
+
+    risk_percent = min(100, risk_percent + sensor_risk)
+
+    print(f"ML Probs: F:{fresh_prob:.1f}% R:{ripening_prob:.1f}% S:{spoiled_prob:.1f}%")
+    print(f"Sensor Risk: +{sensor_risk:.1f}% → Total Risk: {risk_percent:.1f}%")
+
+    return label, confidence, round(risk_percent,1)
 
 
-# ─────────────────────────────────────
-# EMAIL ALERT
-# ─────────────────────────────────────
-def send_email_alert(temp, hum, mq135, label):
+# 📧 EMAIL ALERT FUNCTION
+def send_email_alert(temp, hum, mq135):
 
-    sender_email   = "kaliesboopathy@gmail.com"
+    sender_email = "kaliesboopathy@gmail.com"
     receiver_email = "anbu200516@gmail.com"
-    app_password   = "bqfkqmskhhndegbj"
+    app_password = "dkapfvmfpwtgawku"
 
-    if label.lower() == "ripening":
-        subject = "🍎 Apple Ripening Started!"
-        body    = f"""
-Apple Ripening has started!
+    subject = "⚠️ Apple Spoiled Alert 🍎"
 
-Temperature : {temp} °C
-Humidity    : {hum} %
-Gas Level   : {mq135}
-Status      : {label}
-Time (IST)  : {datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")}
+    body = f"""
+Apple spoilage detected!
 
-Check storage conditions.
+Sensor Data:
+Temperature: {temp} °C
+Humidity: {hum} %
+Gas Level: {mq135}
+
+Immediate action required.
 """
 
-    elif label.lower() == "spoiled":
-        subject = "🚨 Apple Spoiled Alert!"
-        body    = f"""
-Apple has SPOILED!
-
-Temperature : {temp} °C
-Humidity    : {hum} %
-Gas Level   : {mq135}
-Status      : {label}
-Time (IST)  : {datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")}
-
-Immediate action required!
-"""
-
-    msg            = MIMEText(body)
+    msg = MIMEText(body)
     msg['Subject'] = subject
-    msg['From']    = sender_email
-    msg['To']      = receiver_email
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
 
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(sender_email, app_password)
+
         server.send_message(msg)
         server.quit()
-        print(f"📧 Email Sent → {subject}")
+
+        print("📧 Email Alert Sent!")
+
     except Exception as e:
-        print(f"❌ Email Error: {e}")
+        print("Email error:", e)
 
 
-# ─────────────────────────────────────
-# ESP8266 DATA ROUTE
-# ─────────────────────────────────────
-@app.route("/update", methods=["GET", "POST"])
+# 🔥 ESP8266 DATA ROUTE
+@app.route("/update", methods=["GET"])
 def update():
 
-    global latest_data, email_sent
+    global latest_data
+    global last_email_time
 
     try:
-        raw_mq135 = request.args.get("mq135")
-        raw_temp  = request.args.get("temp")
-        raw_hum   = request.args.get("hum")
 
-        print(f"📥 Incoming → {request.args}")
-
-        if raw_mq135 is None or raw_temp is None or raw_hum is None:
-            return jsonify({"error": "missing parameters"}), 400
-
-        mq135 = int(float(raw_mq135))
-        temp  = round(float(raw_temp), 1)
-        hum   = round(float(raw_hum), 1)
-
-        print(f"Temp={temp}  Hum={hum}  MQ135={mq135}")
+        mq135 = float(request.args.get("mq135"))
+        temp = float(request.args.get("temp"))
+        hum = float(request.args.get("hum"))
 
         # ML Prediction
         label, confidence, spoil_risk = predict_spoilage(mq135, temp, hum)
 
-        # Email alerts
-        if label.lower() == "ripening" and not email_sent:
-            send_email_alert(temp, hum, mq135, label)
-            email_sent = True
+        # ✅ MULTIPLE EMAIL ALERTS FOR SPOILED (WITH COOLDOWN)
+        now = datetime.now()
 
         if label.lower() == "spoiled":
-            send_email_alert(temp, hum, mq135, label)
+            if last_email_time is None or (now - last_email_time).seconds > EMAIL_INTERVAL:
+                send_email_alert(temp, hum, mq135)
+                last_email_time = now
 
-        current_time = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         latest_data = {
-            "label"      : label,
-            "confidence" : round(confidence, 2),
-            "spoil_risk" : spoil_risk,
-            "mq135"      : mq135,
-            "temp"       : temp,
-            "hum"        : hum,
-            "timestamp"  : current_time
+            "label": label,
+            "confidence": round(confidence,2),
+            "spoil_risk": spoil_risk,
+            "mq135": mq135,
+            "temp": temp,
+            "hum": hum,
+            "timestamp": current_time
         }
 
+        # Save to Firebase
         firebase_ref.push(latest_data)
 
-        return jsonify({"status": "ok", "data": latest_data})
+        print("📊 Data Stored:", latest_data)
+
+        return jsonify({"status":"ok"})
 
     except Exception as e:
         print("❌ Error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"status":"error"})
 
 
-# ─────────────────────────────────────
-# DASHBOARD ROUTES
-# ─────────────────────────────────────
+# 🔥 DASHBOARD ROUTES
 @app.route("/")
 def index():
     return send_from_directory('.', 'index.html')
+
 
 @app.route("/data")
 def data():
     return jsonify(latest_data)
 
 
-# ─────────────────────────────────────
-# START SERVER
-# ─────────────────────────────────────
+# 🔥 START SERVER
 if __name__ == "__main__":
-    print("🌐 Server Running...")
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+
+    print("🌐 Dashboard Running")
+    print("👉 http://localhost:5000")
+
+    app.run(host="0.0.0.0", port=5000, debug=True)
