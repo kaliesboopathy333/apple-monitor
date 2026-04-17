@@ -10,23 +10,29 @@ from email.mime.text import MIMEText
 
 app = Flask(__name__, static_folder='.')
 
-# 🔥 FIREBASE CONNECTION
+# 🔥 FIREBASE
 cred = credentials.Certificate("servicesAccountKey.json")
-
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://applemonitor-d8626-default-rtdb.firebaseio.com/'
 })
-
 firebase_ref = db.reference("sensor_data")
 
 print("🔥 Firebase Connected!")
 
-# 🔥 LOAD ML MODEL
-print("🔄 Loading LSTM model...")
+# 🔥 LOAD MODEL
 model = keras.models.load_model('apple_lstm_model.keras')
 scaler = joblib.load('scaler.pkl')
 le = joblib.load('label_encoder.pkl')
+
 print("✅ Model Loaded!")
+
+# 🔥 GLOBALS
+MQ_BASELINE = 400   # 🔥 CHANGE after measuring clean air
+SEQ_LENGTH = 10
+
+sequence_buffer = []
+last_email_time = None
+EMAIL_INTERVAL = 300  # 5 min
 
 latest_data = {
     "label": "Waiting...",
@@ -38,55 +44,73 @@ latest_data = {
     "timestamp": ""
 }
 
-# ✅ NEW: Email cooldown control
-last_email_time = None
-EMAIL_INTERVAL = 300  # 5 minutes
+# 🔥 RULE BASED FALLBACK
+def rule_based_prediction(mq_diff, temp, hum):
+
+    if mq_diff < 80 and temp < 28:
+        return "Fresh", 85, 10
+
+    elif mq_diff < 180:
+        return "Ripening", 80, 40
+
+    else:
+        return "Spoiled", 90, 80
 
 
-# 🔥 ML PREDICTION FUNCTION
+# 🔥 ML + HYBRID PREDICTION
 def predict_spoilage(mq135, temp, hum):
 
-    scaled = scaler.transform([[mq135, temp, hum]])
-    input_data = scaled.reshape(1,1,3)
+    global sequence_buffer
 
-    pred = model.predict(input_data, verbose=0)[0]
+    # ✅ Baseline correction
+    mq_diff = max(mq135 - MQ_BASELINE, 0)
+
+    # Prepare input
+    input_features = [mq_diff, temp, hum]
+    scaled = scaler.transform([input_features])[0]
+
+    sequence_buffer.append(scaled)
+
+    if len(sequence_buffer) > SEQ_LENGTH:
+        sequence_buffer.pop(0)
+
+    # 🔥 If not enough data → fallback
+    if len(sequence_buffer) < SEQ_LENGTH:
+        return rule_based_prediction(mq_diff, temp, hum)
+
+    # 🔥 LSTM Prediction
+    seq = np.array(sequence_buffer).reshape(1, SEQ_LENGTH, 3)
+
+    pred = model.predict(seq, verbose=0)[0]
 
     idx = np.argmax(pred)
     label = le.inverse_transform([idx])[0]
-
     confidence = float(np.max(pred) * 100)
 
     fresh_prob = pred[0] * 100
     ripening_prob = pred[1] * 100
     spoiled_prob = pred[2] * 100
 
-    # ML risk calculation
-    risk_percent = (ripening_prob * 0.6 + spoiled_prob * 1.0)
+    # 🔥 Risk calculation
+    risk = (ripening_prob * 0.6 + spoiled_prob)
 
-    # Sensor based risk
-    sensor_risk = 0
+    # Add sensor effects
+    if temp > 30:
+        risk += (temp - 30) * 1.5
 
-    # Temperature risk
-    temp_risk = min(max((temp - 20) / 15 * 25, 0), 25)
-    sensor_risk += temp_risk
+    if mq_diff > 100:
+        risk += mq_diff * 0.05
 
-    # Humidity risk
-    if hum > 85:
-        sensor_risk += min((hum - 85) * 1, 5)
+    risk = min(100, risk)
 
-    # Gas risk
-    if mq135 > 400:
-        sensor_risk += min((mq135 - 400) * 0.02, 10)
+    print(f"MQ_DIFF: {mq_diff}")
+    print(f"ML → F:{fresh_prob:.1f} R:{ripening_prob:.1f} S:{spoiled_prob:.1f}")
+    print(f"FINAL RISK: {risk:.1f}%")
 
-    risk_percent = min(100, risk_percent + sensor_risk)
-
-    print(f"ML Probs: F:{fresh_prob:.1f}% R:{ripening_prob:.1f}% S:{spoiled_prob:.1f}%")
-    print(f"Sensor Risk: +{sensor_risk:.1f}% → Total Risk: {risk_percent:.1f}%")
-
-    return label, confidence, round(risk_percent,1)
+    return label, round(confidence,2), round(risk,1)
 
 
-# 📧 EMAIL ALERT FUNCTION
+# 📧 EMAIL ALERT
 def send_email_alert(temp, hum, mq135):
 
     sender_email = "kaliesboopathy@gmail.com"
@@ -98,12 +122,11 @@ def send_email_alert(temp, hum, mq135):
     body = f"""
 Apple spoilage detected!
 
-Sensor Data:
 Temperature: {temp} °C
 Humidity: {hum} %
 Gas Level: {mq135}
 
-Immediate action required.
+Check immediately!
 """
 
     msg = MIMEText(body)
@@ -115,17 +138,16 @@ Immediate action required.
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(sender_email, app_password)
-
         server.send_message(msg)
         server.quit()
 
-        print("📧 Email Alert Sent!")
+        print("📧 Email Sent!")
 
     except Exception as e:
-        print("Email error:", e)
+        print("Email Error:", e)
 
 
-# 🔥 ESP8266 DATA ROUTE
+# 🔥 ROUTE
 @app.route("/update", methods=["GET"])
 def update():
 
@@ -133,15 +155,13 @@ def update():
     global last_email_time
 
     try:
-
         mq135 = float(request.args.get("mq135"))
         temp = float(request.args.get("temp"))
         hum = float(request.args.get("hum"))
 
-        # ML Prediction
         label, confidence, spoil_risk = predict_spoilage(mq135, temp, hum)
 
-        # ✅ MULTIPLE EMAIL ALERTS FOR SPOILED (WITH COOLDOWN)
+        # 🔥 MULTIPLE EMAIL ALERTS (COOLDOWN)
         now = datetime.now()
 
         if label.lower() == "spoiled":
@@ -153,7 +173,7 @@ def update():
 
         latest_data = {
             "label": label,
-            "confidence": round(confidence,2),
+            "confidence": confidence,
             "spoil_risk": spoil_risk,
             "mq135": mq135,
             "temp": temp,
@@ -161,19 +181,18 @@ def update():
             "timestamp": current_time
         }
 
-        # Save to Firebase
         firebase_ref.push(latest_data)
 
-        print("📊 Data Stored:", latest_data)
+        print("📊 Stored:", latest_data)
 
-        return jsonify({"status":"ok"})
+        return jsonify({"status": "ok"})
 
     except Exception as e:
         print("❌ Error:", e)
-        return jsonify({"status":"error"})
+        return jsonify({"status": "error"})
 
 
-# 🔥 DASHBOARD ROUTES
+# 🔥 DASHBOARD
 @app.route("/")
 def index():
     return send_from_directory('.', 'index.html')
@@ -184,10 +203,7 @@ def data():
     return jsonify(latest_data)
 
 
-# 🔥 START SERVER
+# 🔥 RUN
 if __name__ == "__main__":
-
-    print("🌐 Dashboard Running")
-    print("👉 http://localhost:5000")
-
+    print("🌐 Running → http://localhost:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
