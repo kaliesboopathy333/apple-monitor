@@ -27,7 +27,7 @@ le = joblib.load('label_encoder.pkl')
 print("✅ Model Loaded!")
 
 # 🔥 GLOBALS
-MQ_BASELINE = 400   # 🔥 CHANGE after measuring clean air
+MQ_BASELINE = 200   # 🔥 CHANGE after measuring clean air
 SEQ_LENGTH = 10
 
 sequence_buffer = []
